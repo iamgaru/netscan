@@ -101,7 +101,8 @@ func Text(w io.Writer, inv inventory.Inventory) error {
 			partial++
 		}
 	}
-	fmt.Fprintf(&b, "Summary: %d completed, %d partial/failed, %d open ports\n", complete, partial, open)
+	b.WriteString(SummaryText(inv))
+	fmt.Fprintf(&b, "\nSummary: %d completed, %d partial/failed, %d open ports\n", complete, partial, open)
 	for _, e := range inv.Errors {
 		fmt.Fprintf(&b, "Error: %s\n", Clean(e))
 	}

@@ -1,11 +1,23 @@
 .DEFAULT_GOAL := build
 
 GO ?= go
+PREFIX ?= $(HOME)/.local
+BINDIR ?= $(PREFIX)/bin
+INSTALL_NAME ?= netscan
 
-.PHONY: build test vet check race fmt clean help
+.PHONY: build install test vet check race fmt clean help
 
 build:
 	$(GO) build -o netscan ./cmd/netscan
+
+install: build
+	install -d "$(BINDIR)"
+	install -m 0755 ./netscan "$(BINDIR)/$(INSTALL_NAME)"
+	@printf 'Installed %s\n' "$(BINDIR)/$(INSTALL_NAME)"
+	@case ":$$PATH:" in \
+	  *":$(BINDIR):"*) ;; \
+	  *) printf 'Add this directory to your PATH: %s\n' "$(BINDIR)" ;; \
+	esac
 
 test:
 	$(GO) test ./...
@@ -27,6 +39,8 @@ clean:
 help:
 	@printf '%s\n' \
 	  'make / make build  Build ./netscan' \
+	  'make install       Build and install to ~/.local/bin (no sudo)' \
+	  '                   Override PREFIX, BINDIR, or INSTALL_NAME as needed' \
 	  'make check         Run tests, vet, and build (no network scans)' \
 	  'make test          Run offline fixture-based tests' \
 	  'make vet           Run Go static analysis' \

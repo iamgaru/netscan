@@ -119,7 +119,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "down", "j":
 			if m.Detail && len(m.Hosts) > 0 {
-				wrapped := lipgloss.NewStyle().Width(max(10, m.Width-2)).Render(report.HostText(m.Hosts[m.Selected]))
+				wrapped := lipgloss.NewStyle().Width(max(10, m.Width-2)).Render((report.Palette{Enabled: !m.NoColor}).Format(report.HostText(m.Hosts[m.Selected])))
 				m.Offset = min(m.Offset+1, max(0, len(strings.Split(wrapped, "\n"))-max(1, m.Height-9)))
 			} else {
 				m.Selected = min(max(0, len(m.Hosts)-1), m.Selected+1)
@@ -132,9 +132,7 @@ func (m Model) View() string {
 	width := max(10, m.Width-2)
 	bodyHeight := max(1, m.Height-9)
 	header := fmt.Sprintf("NETSCAN  %s  [%s]", m.Target, m.Profile)
-	if !m.NoColor {
-		header = lipgloss.NewStyle().Foreground(lipgloss.Color("86")).Bold(true).Render(header)
-	}
+
 	active := []string{}
 	for ip := range m.Active {
 		active = append(active, ip)
@@ -150,7 +148,7 @@ func (m Model) View() string {
 	lines := []string{}
 	if m.Detail && len(m.Hosts) > 0 {
 		// Wrap details before paging so every service and script remains accessible.
-		wrapped := lipgloss.NewStyle().Width(width).Render(report.HostText(m.Hosts[m.Selected]))
+		wrapped := lipgloss.NewStyle().Width(width).Render((report.Palette{Enabled: !m.NoColor}).Format(report.HostText(m.Hosts[m.Selected])))
 		lines = strings.Split(wrapped, "\n")
 		offset := min(m.Offset, max(0, len(lines)-bodyHeight))
 		lines = lines[offset:min(len(lines), offset+bodyHeight)]
@@ -169,7 +167,7 @@ func (m Model) View() string {
 			if len(h.OSMatches) > 0 {
 				name += " · " + h.OSMatches[0].Name
 			}
-			lines = append(lines, fmt.Sprintf("%s %-15s %-10s %d open  %s", marker, h.IP, h.Status, len(h.Ports), report.Clean(name)))
+			lines = append(lines, (report.Palette{Enabled: !m.NoColor}).Format(fmt.Sprintf("%s %-15s %-10s %d open  %s", marker, h.IP, h.Status, len(h.Ports), report.Clean(name))))
 		}
 	}
 	for len(lines) < bodyHeight {
@@ -179,6 +177,7 @@ func (m Model) View() string {
 	if m.Confirm {
 		hint = "Cancel running scans? y / n"
 	}
-	view := fmt.Sprintf("%s\n%s · %s elapsed\nHosts: %d · Completed: %d/%d · Errors: %d · Open ports: %d\nActive: %s\n\n%s\n\n%s", header, m.Phase, time.Since(m.Started).Round(time.Second), m.Total, m.Completed, m.Total, failures, open, strings.Join(active, ", "), strings.Join(lines, "\n"), hint)
+	summary := (report.Palette{Enabled: !m.NoColor}).Format(fmt.Sprintf("%s\n%s · %s elapsed\nHosts: %d · Completed: %d/%d · Errors: %d · Open ports: %d\nActive: %s", header, m.Phase, time.Since(m.Started).Round(time.Second), m.Total, m.Completed, m.Total, failures, open, strings.Join(active, ", ")))
+	view := fmt.Sprintf("%s\n\n%s\n\n%s", summary, strings.Join(lines, "\n"), hint)
 	return lipgloss.NewStyle().MaxWidth(max(10, m.Width)).Render(view)
 }

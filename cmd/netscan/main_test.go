@@ -90,3 +90,18 @@ func TestCLIOutputsAndErrors(t *testing.T) {
 		t.Fatal("missing install guidance")
 	}
 }
+
+func TestRedirectedOutputDisablesColour(t *testing.T) {
+	var b bytes.Buffer
+	if terminalPalette(&b).Enabled {
+		t.Fatal("buffer is not a terminal")
+	}
+	f, err := os.CreateTemp(t.TempDir(), "redirect")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if terminalPalette(f).Enabled {
+		t.Fatal("redirected file must remain plain")
+	}
+}

@@ -23,6 +23,51 @@ To build without Make:
 
     go build -o netscan ./cmd/netscan
 
+### Install on your PATH (macOS)
+
+Install for your user without sudo:
+
+    make install
+    netscan --help
+
+This builds and copies the executable to `~/.local/bin/netscan`. Your current
+shell must have `~/.local/bin` on PATH; the task prints a reminder if it does not.
+If needed, add this line once to `~/.zshrc`, then open a new terminal or run
+`source ~/.zshrc`:
+
+    export PATH="$HOME/.local/bin:$PATH"
+
+You can now run `netscan` from any directory. For elevated scans, use the full
+path because sudo may use a different PATH:
+
+    sudo "$HOME/.local/bin/netscan" --no-tui 10.0.2.0/22
+
+Nmap must still be installed and discoverable. Installation does not change your
+shell configuration or run a scan. Run `make install` again after changes to
+update the installed executable; it replaces the file at the chosen destination.
+
+The default is a per-user installation. For a different writable installation
+directory, use `make install PREFIX=/your/prefix` (installs in its `bin` directory)
+or `make install BINDIR=/your/bin`. For a machine-wide installation, build as your
+normal user and copy the binary to a directory on the system PATH:
+
+    make build
+    sudo install -d /usr/local/bin
+    sudo install -m 0755 ./netscan /usr/local/bin/netscan
+
+### Executable name and conflicts
+
+The project and default command remain `netscan`. Check `type -a netscan` before
+installing if you already use a similarly named tool. To avoid a conflict without
+renaming the project, choose another installed command:
+
+    make install INSTALL_NAME=netscan-local
+    netscan-local --help
+
+This changes only the installed filename; the local build is still `./netscan`
+and the CLI's help/banner still identifies the project as netscan. Do not install
+over a different tool at the same destination; use a distinct name or directory.
+
 ## Usage
 
 Flags precede the one IPv4 address or CIDR:
@@ -70,7 +115,15 @@ and elapsed time. Arrows or j/k select a host; Enter opens details, arrows scrol
 and Esc returns. Press q then y to cancel, or Ctrl-C immediately. The interface
 uses the normal screen so the final report remains in scrollback. Pipes,
 TERM=dumb, --no-tui, and JSON stdout use static mode. NO_COLOR disables TUI
-color. Progress and saved paths go to stderr.
+color in both live and final reports. Progress and saved paths go to stderr.
+
+Terminal reports highlight IPs and subnet summaries in cyan, hostnames/MAC/vendor
+in magenta, and OS estimates in amber. Open-port rows are green, or amber when
+Nmap reports service confidence below 7/10. Scan statuses use green for scanned,
+amber for partial, and red for failed. Colours describe fields and uncertainty,
+not an inferred device type. All OS candidates remain visible. Redirected output
+and saved text reports stay plain; set NO_COLOR=1 to disable colour
+or TERM=dumb for a plain terminal.
 
 Example (abridged):
 
@@ -88,7 +141,24 @@ Example (abridged):
       25565/tcp  open   minecraft  custom server
       filtered: 997 ports
 
+    HOST SUMMARY
+    IP          STATUS   OPEN  HOSTNAME / VENDOR  TOP OS ESTIMATE
+    10.0.3.10   scanned  3     example / Example  Linux (95%)
+
     Summary: 1 completed, 0 partial/failed, 3 open ports
+
+### Screenshot
+
+A terminal screenshot will be added here when available. A useful capture shows
+one host's details and the final coloured HOST SUMMARY table. Use an existing scan
+result, crop unrelated terminal content, and redact any addresses, MACs, or names
+you do not want published. The example above is representative fixture data.
+
+A compact, colour-coded host summary table follows all host details, showing IP,
+status, open-port count, hostname/vendor, and the highest-accuracy OS estimate.
+Long metadata is shortened only in this table; full details remain above. For
+incomplete scans, an open-port count of ? means undetermined and + means detected
+so far. The table is also included without colour in saved text reports.
 
 Every detected open port is retained, including ports adjacent to script entries.
 Closed/filtered states are counted. Empty successful scans explicitly say no open

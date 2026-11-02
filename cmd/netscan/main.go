@@ -57,6 +57,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	s := scanner.Scanner{Runner: runner, Privileged: privileged}
 	var inv inventory.Inventory
+	outPalette := terminalPalette(stdout)
+	progressPalette := terminalPalette(stderr)
 	interactive := !o.NoTUI && !o.JSON && stdout == os.Stdout && isatty.IsTerminal(os.Stdout.Fd()) && isatty.IsTerminal(os.Stdin.Fd()) && os.Getenv("TERM") != "dumb"
 	if interactive {
 		events := make(chan scanner.Event, 64)
@@ -86,11 +88,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 			defer mu.Unlock()
 			switch e.Phase {
 			case "discovery":
-				fmt.Fprintf(stderr, "Discovering %s…\n", o.Target)
+				fmt.Fprint(stderr, progressPalette.Format(fmt.Sprintf("Discovering %s…\n", o.Target)))
 			case "inspection":
-				fmt.Fprintf(stderr, "Inspecting %d discovered hosts (%d workers)…\n", e.Total, o.Jobs)
+				fmt.Fprint(stderr, progressPalette.Format(fmt.Sprintf("Inspecting %d discovered hosts (%d workers)…\n", e.Total, o.Jobs)))
 			case "completed":
-				fmt.Fprintf(stderr, "[%d/%d] %s: %s\n", e.Completed, e.Total, e.Host.IP, e.Host.Status)
+				fmt.Fprint(stderr, progressPalette.Format(fmt.Sprintf("[%d/%d] %s: %s\n", e.Completed, e.Total, e.Host.IP, e.Host.Status)))
 			}
 			if o.Verbose && e.Diagnostic != "" {
 				fmt.Fprintln(stderr, report.Clean(e.Diagnostic))
@@ -100,7 +102,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if o.JSON {
 		err = report.JSON(stdout, inv)
 	} else {
-		err = report.Text(stdout, inv)
+		err = report.Terminal(stdout, inv, outPalette)
 	}
 	failed := len(inv.Errors) > 0
 	if err != nil {
@@ -119,4 +121,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+func terminalPalette(w io.Writer) report.Palette {
+	f, ok := w.(*os.File)
+	return report.Palette{Enabled: ok && isatty.IsTerminal(f.Fd()) && os.Getenv("TERM") != "dumb" && os.Getenv("NO_COLOR") == ""}
 }
