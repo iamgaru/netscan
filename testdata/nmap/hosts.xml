@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<nmaprun><host><status state="up"/><address addr="10.0.3.10" addrtype="ipv4"/><address addr="AA:BB:CC:DD:EE:FF" addrtype="mac" vendor="Example"/>
+<hostnames><hostname name="example"/></hostnames><ports>
+<extraports state="filtered" count="997"/>
+<port protocol="tcp" portid="22"><state state="open"/><service name="ssh" product="OpenSSH" version="9.8" conf="10"/><script id="ssh-hostkey" output="key details"/></port>
+<port protocol="tcp" portid="443"><state state="open"/><service name="https"/><script id="ssl-cert" output="example &amp; certificate"/></port>
+<port protocol="tcp" portid="25565"><state state="open"/><service name="minecraft" extrainfo="custom server"/></port>
+</ports><os><osmatch name="Linux" accuracy="95"/></os><hostscript><script id="test" output="host script"/></hostscript><times srtt="1200"/></host>
+<host><status state="down"/><address addr="10.0.0.2" addrtype="ipv4"/></host>
+<host><status state="up"/><address addr="10.0.0.9" addrtype="ipv4"/></host>
+<runstats><finished exit="success"/></runstats></nmaprun>
