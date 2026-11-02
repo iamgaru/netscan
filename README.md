@@ -6,11 +6,22 @@ Use it only on networks you are authorized to inspect.
 
 ## Install
 
-Requires Go 1.23+ and Nmap (macOS is the primary target):
+Requires Go 1.23+, Make, and Nmap (macOS is the primary target). If Make is
+missing on macOS, install the Command Line Tools with `xcode-select --install`.
+From the repository directory:
 
     brew install go nmap
-    go build -o netscan ./cmd/netscan
+    make build
     ./netscan --help
+
+`make` also builds by default. The executable is `netscan` in the repository
+root; run it as `./netscan` from that directory. On macOS it has no `.exe`
+extension. Building or running `--help` does not scan the network. Nmap must
+remain installed to run scans; Go and Make are only needed to build.
+
+To build without Make:
+
+    go build -o netscan ./cmd/netscan
 
 ## Usage
 
@@ -101,10 +112,14 @@ Nmap's own timeout; total duration depends on host count and workers.
 
 ## Development and verification
 
-    go test ./...
-    go vet ./...
-    go build ./cmd/netscan
-    go test -race ./...
+    make check
+    make race
+
+`make check` runs `go test ./...`, `go vet ./...`, and builds `./netscan`.
+Individual targets are `make test`, `make vet`, and `make build`. Use `make fmt`
+to format Go sources, `make clean` to remove only the built executable, and
+`make help` to list targets. Override the Go command if needed, for example
+`make build GO=/opt/homebrew/bin/go`.
 
 Tests use representative Nmap XML fixtures, fake runners, and a fake Nmap executable.
 They do not scan a network or require installed Nmap. Live smoke tests require an
