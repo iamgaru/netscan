@@ -4,6 +4,8 @@ A host-centric IPv4 network inventory CLI powered by installed Nmap. It discover
 responding hosts once, then inspects only those hosts with bounded concurrency.
 Use it only on networks you are authorized to inspect.
 
+![netscan terminal demo](media/demo.gif)
+
 ## Install
 
 Requires Go 1.23+, Make, and Nmap (macOS is the primary target). If Make is
@@ -146,13 +148,6 @@ Example (abridged):
     10.0.3.10   scanned  3     example / Example  Linux (95%)
 
     Summary: 1 completed, 0 partial/failed, 3 open ports
-
-### Screenshot
-
-A terminal screenshot will be added here when available. A useful capture shows
-one host's details and the final coloured HOST SUMMARY table. Use an existing scan
-result, crop unrelated terminal content, and redact any addresses, MACs, or names
-you do not want published. The example above is representative fixture data.
 
 A compact, colour-coded host summary table follows all host details, showing IP,
 status, open-port count, hostname/vendor, and the highest-accuracy OS estimate.

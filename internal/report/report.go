@@ -110,6 +110,9 @@ func textReport(w io.Writer, inv inventory.Inventory, width int) error {
 	for _, e := range inv.Errors {
 		fmt.Fprintf(&b, "Error: %s\n", Clean(e))
 	}
+	if partial > 0 {
+		fmt.Fprintln(&b, "For incomplete hosts, retry their IP with --host-timeout 240s or --profile quick.")
+	}
 	fmt.Fprintln(&b, "Nonresponding hosts were not discovered as up. Services are not process lists.")
 	_, err := w.Write(b.Bytes())
 	return err

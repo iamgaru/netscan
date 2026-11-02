@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/term"
 	"github.com/mattn/go-isatty"
-	"regexp"
-	"strings"
 
 	"github.com/iamgaru/netscan/internal/inventory"
 )
@@ -89,25 +89,41 @@ func (p Palette) Format(text string) string {
 
 // Terminal renders the same content as Text, with optional ANSI colour.
 func Terminal(w io.Writer, inv inventory.Inventory, palette Palette) error {
-	var b bytes.Buffer
 	width := 0
 	tty := false
 	if f, ok := w.(*os.File); ok && isatty.IsTerminal(f.Fd()) {
 		tty = true
 		width, _, _ = term.GetSize(f.Fd())
 	}
-	if err := textReport(&b, inv, width); err != nil {
+	text, err := terminalText(inv, palette, width)
+	if err != nil {
 		return err
-	}
-	text := palette.Format(b.String())
-	if width > 0 {
-		text = ansi.Hardwrap(text, width, true)
 	}
 	if tty {
 		// Explicit carriage returns keep rows aligned even if terminal output
 		// newline translation is disabled after an interactive session.
 		text = strings.ReplaceAll(text, "\n", "\r\n")
 	}
-	_, err := fmt.Fprint(w, text)
+	_, err = fmt.Fprint(w, text)
 	return err
+}
+
+// terminalText leaves the last terminal column unused. Printing into that
+// column can set a terminal's pending-wrap flag, which affects scrollback/copy
+// semantics even when a newline follows.
+func terminalText(inv inventory.Inventory, palette Palette, columns int) (string, error) {
+	width := 0
+	if columns > 1 {
+		width = columns - 1
+	}
+	var b bytes.Buffer
+	if err := textReport(&b, inv, width); err != nil {
+		return "", err
+	}
+	text := palette.Format(b.String())
+	if width > 0 {
+		// Prefer word boundaries for diagnostics, then split only oversized tokens.
+		text = ansi.Hardwrap(ansi.Wordwrap(text, width, ""), width, true)
+	}
+	return text, nil
 }

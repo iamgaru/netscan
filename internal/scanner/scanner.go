@@ -145,7 +145,7 @@ func (s Scanner) Run(ctx context.Context, o cli.Options, emit func(Event)) inven
 					}
 				}
 				if !found && pe == nil {
-					pe = fmt.Errorf("inspection returned no matching host (possibly Nmap host timeout)")
+					pe = fmt.Errorf("Nmap returned no host results; timeout possible, cause unconfirmed")
 				}
 				h.Duration = time.Since(start)
 				h.RawXML = string(raw)
@@ -157,7 +157,7 @@ func (s Scanner) Run(ctx context.Context, o cli.Options, emit func(Event)) inven
 					}
 					switch {
 					case errors.Is(err, context.DeadlineExceeded):
-						h.Error = fmt.Sprintf("inspection timed out after %s; results incomplete (try --host-timeout with a longer duration)", o.HostTimeout)
+						h.Error = fmt.Sprintf("inspection timed out after %s; results incomplete", o.HostTimeout)
 					case errors.Is(err, context.Canceled):
 						h.Error = "inspection cancelled; results incomplete"
 					default:
