@@ -176,3 +176,33 @@ func TestDedupAndScope(t *testing.T) {
 		t.Fatal("dedup/scope broken")
 	}
 }
+
+func TestInterruptedXMLReportsCauseAndKeepsPorts(t *testing.T) {
+	for _, cause := range []error{context.DeadlineExceeded, context.Canceled} {
+		t.Run(cause.Error(), func(t *testing.T) {
+			o := options(t)
+			f := runnerFunc(func(_ context.Context, args []string) ([]byte, []byte, error) {
+				if args[0] == "-sn" {
+					return fixture(t), nil, nil
+				}
+				raw := fmt.Sprintf(`<nmaprun><host><status state="up"/><address addr="%s" addrtype="ipv4"/><ports><port protocol="tcp" portid="443"><state state="open"/></port></ports></host>`, args[len(args)-1])
+				return []byte(raw), nil, cause
+			})
+			inv := (Scanner{Runner: f}).Run(context.Background(), o, nil)
+			for _, h := range inv.Hosts {
+				if h.Status != "partial" || len(h.Ports) != 1 || h.RawXML == "" {
+					t.Fatalf("lost partial data: %+v", h)
+				}
+				if strings.Contains(h.Error, "XML") || !strings.Contains(h.Error, "incomplete") {
+					t.Fatal(h.Error)
+				}
+				if cause == context.DeadlineExceeded && !strings.Contains(h.Error, "timed out after 100ms") {
+					t.Fatal(h.Error)
+				}
+				if cause == context.Canceled && !strings.Contains(h.Error, "cancelled") {
+					t.Fatal(h.Error)
+				}
+			}
+		})
+	}
+}

@@ -158,7 +158,8 @@ A compact, colour-coded host summary table follows all host details, showing IP,
 status, open-port count, hostname/vendor, and the highest-accuracy OS estimate.
 Long metadata is shortened only in this table; full details remain above. For
 incomplete scans, an open-port count of ? means undetermined and + means detected
-so far. The table is also included without colour in saved text reports.
+so far. The terminal table adapts to the available width, with a stacked layout
+in narrow windows. The table is also included without colour in saved text reports.
 
 Every detected open port is retained, including ports adjacent to script entries.
 Closed/filtered states are counted. Empty successful scans explicitly say no open
@@ -176,7 +177,13 @@ scripts, timestamps, latency in microseconds, and duration in nanoseconds.
 
 Exit status is 0 for completion (including zero discovered hosts), 2 for invalid
 usage, and 1 for dependency, discovery, cancellation, inspection, or output errors.
-Partial results are printed and persisted. A large network's discovery may need
+Partial results are printed and persisted. If a host reaches the inspection
+deadline, its error reports the timeout rather than the resulting truncated XML.
+You can retry an affected host with a longer deadline, for example:
+
+    netscan --host-timeout 240s 10.0.0.109
+
+A large network's discovery may need
 a longer timeout. The per-host deadline is a wall-clock bound in addition to
 Nmap's own timeout; total duration depends on host count and workers.
 

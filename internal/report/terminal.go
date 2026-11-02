@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
+
+	"github.com/charmbracelet/x/ansi"
+	"github.com/charmbracelet/x/term"
+	"github.com/mattn/go-isatty"
 	"regexp"
 	"strings"
 
@@ -85,9 +90,24 @@ func (p Palette) Format(text string) string {
 // Terminal renders the same content as Text, with optional ANSI colour.
 func Terminal(w io.Writer, inv inventory.Inventory, palette Palette) error {
 	var b bytes.Buffer
-	if err := Text(&b, inv); err != nil {
+	width := 0
+	tty := false
+	if f, ok := w.(*os.File); ok && isatty.IsTerminal(f.Fd()) {
+		tty = true
+		width, _, _ = term.GetSize(f.Fd())
+	}
+	if err := textReport(&b, inv, width); err != nil {
 		return err
 	}
-	_, err := fmt.Fprint(w, palette.Format(b.String()))
+	text := palette.Format(b.String())
+	if width > 0 {
+		text = ansi.Hardwrap(text, width, true)
+	}
+	if tty {
+		// Explicit carriage returns keep rows aligned even if terminal output
+		// newline translation is disabled after an interactive session.
+		text = strings.ReplaceAll(text, "\n", "\r\n")
+	}
+	_, err := fmt.Fprint(w, text)
 	return err
 }

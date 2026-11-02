@@ -51,3 +51,21 @@ func TestEmptySummary(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestSummaryFitsTerminal(t *testing.T) {
+	inv := sample(t)
+	inv.Hosts[0].IP = "192.168.100.200"
+	inv.Hosts[0].Hostnames = []string{"長いデバイス名"}
+	inv.Hosts[0].OSMatches = []inventory.OSMatch{{Name: "Android 10 - 11 (Linux 4.9 - 4.14)", Accuracy: 100}}
+	for _, width := range []int{40, 64, 80, 100, 120} {
+		text := summaryText(inv, width)
+		for _, line := range strings.Split(text, "\n") {
+			if ansi.StringWidth(line) > width {
+				t.Fatalf("width %d: overflowing line %q", width, line)
+			}
+		}
+		if !strings.Contains(text, "192.168.100.200") || !strings.Contains(text, "(100%)") {
+			t.Fatalf("lost identity or accuracy at %d: %s", width, text)
+		}
+	}
+}

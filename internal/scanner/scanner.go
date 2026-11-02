@@ -3,6 +3,7 @@ package scanner
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/netip"
 	"sort"
@@ -154,7 +155,14 @@ func (s Scanner) Run(ctx context.Context, o cli.Options, emit func(Event)) inven
 					if found {
 						h.Status = "partial"
 					}
-					h.Error = errorsText(err, pe, diag)
+					switch {
+					case errors.Is(err, context.DeadlineExceeded):
+						h.Error = fmt.Sprintf("inspection timed out after %s; results incomplete (try --host-timeout with a longer duration)", o.HostTimeout)
+					case errors.Is(err, context.Canceled):
+						h.Error = "inspection cancelled; results incomplete"
+					default:
+						h.Error = errorsText(err, pe, diag)
+					}
 				}
 				results <- result{i, h, string(diag)}
 			}

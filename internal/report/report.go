@@ -88,6 +88,10 @@ func HostText(h inventory.Host) string {
 	return b.String()
 }
 func Text(w io.Writer, inv inventory.Inventory) error {
+	return textReport(w, inv, 0)
+}
+
+func textReport(w io.Writer, inv inventory.Inventory, width int) error {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "NETSCAN  %s\nProfile: %s | TCP ports: %s\nStarted: %s | Elapsed: %s\nDiscovered up: %d\n\n", inv.CIDR, inv.Profile, inv.Ports, inv.StartedAt.Format("2006-01-02 15:04:05 MST"), inv.EndedAt.Sub(inv.StartedAt).Round(1e6), len(inv.Hosts))
 	open, complete, partial := 0, 0, 0
@@ -101,7 +105,7 @@ func Text(w io.Writer, inv inventory.Inventory) error {
 			partial++
 		}
 	}
-	b.WriteString(SummaryText(inv))
+	b.WriteString(summaryText(inv, width))
 	fmt.Fprintf(&b, "\nSummary: %d completed, %d partial/failed, %d open ports\n", complete, partial, open)
 	for _, e := range inv.Errors {
 		fmt.Fprintf(&b, "Error: %s\n", Clean(e))
